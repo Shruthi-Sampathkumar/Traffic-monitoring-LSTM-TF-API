@@ -125,6 +125,10 @@ def run(flags_obj):
     distribution_utils.undo_set_up_synthetic_data()
     input_fn = imagenet_main.input_fn
 
+  strategy = distribution_utils.get_distribution_strategy(
+      distribution_strategy=flags_obj.distribution_strategy,
+      num_gpus=flags_obj.num_gpus)
+
   strategy_scope = keras_common.get_strategy_scope(strategy)
 
   train_input_dataset = input_fn(
@@ -141,10 +145,6 @@ def run(flags_obj):
       batch_size=flags_obj.batch_size,
       num_epochs=flags_obj.train_epochs,
       parse_record_fn=parse_record_keras)
-
-  strategy = distribution_utils.get_distribution_strategy(
-      distribution_strategy=flags_obj.distribution_strategy,
-      num_gpus=flags_obj.num_gpus)
 
   with strategy_scope:
     optimizer = keras_common.get_optimizer()
