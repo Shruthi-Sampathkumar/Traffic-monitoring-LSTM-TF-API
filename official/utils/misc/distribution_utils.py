@@ -230,3 +230,73 @@ def configure_cluster(worker_hosts=None, task_index=-1):
   else:
     num_workers = 1
   return num_workers
+
+def num_workers():
+  """Returns the number of workers in the cluster."""
+  cluster_resolver = tf.distribute.cluster_resolver.TFConfigClusterResolver()
+  cluster_spec = cluster_resolver.cluster_spec().as_dict()
+  task_type = cluster_resolver.task_type
+
+  # Other jobs such as "ps" shouldn't call this function.
+  if task_type not in ["chief", "worker", "evaluator"]:
+    raise ValueError("Unexpected `task_type` %r" % task_type)
+
+  if task_type == "evaluator":
+    # The "evaluator" is in its own cluster or its own partition of a cluster.
+    # So we don't have to count "chief" or "worker" if the current task is an
+    # "evaluator".
+    return len(cluster_spec["evaluator"])
+  else:
+    # In the non-evaluator case, we return the total number of "chief" and
+    # "worker" tasks as the "chief" is also a worker.
+    return (len(cluster_spec.get("chief", [])) +
+            len(cluster_spec.get("worker", [])))
+
+
+def id_in_cluster():
+  """Returns a unique id for the task in the `task_type`'s cluster.
+
+  It returns an id ranging from [0, `worker_count(task_type, task_id)`).
+
+  Note: this function assumes that "evaluate" job is in its own cluster or its
+  own partition of a cluster.
+
+  Returns:
+    an int indicating the unique id.
+
+  Throws:
+    ValueError: if `task_type` is not "chief", "worker" or "evaluator".
+  """
+  cluster_resolver = tf.distribute.cluster_resolver.TFConfigClusterResolver()
+  cluster_spec = cluster_resolver.cluster_spec().as_dict()
+  task_type = cluster_resolver.task_type
+  task_id = cluster_resolver.task_id
+
+  # The "chief" job has always id 0 and there is at most one and "worker" jobs
+  # come after it.
+  if task_type == "chief":
+    return 0
+
+  if task_type == "worker":
+    return task_id + len(cluster_spec.get("chief", []))
+
+  # The "evaluator" is in its own cluster or its own partition of a cluster.
+  if task_type == "evaluator":
+    return task_id
+
+  # We currently don't assign ids to other tasks.
+  raise ValueError("There is no id for task_type %r" % task_type)
+
+
+def maybe_shard_dataset(dataset):
+  """Shard the dataset if running in multi-node environment."""
+  cluster_resolver = tf.distribute.cluster_resolver.TFConfigClusterResolver()
+  cluster_spec = cluster_resolver.cluster_spec().as_dict()
+  if cluster_spec:
+    tf.compat.v1.logging.info("Sharding dataset %d/%d.", id_in_cluster(),
+                              num_workers())
+    dataset = dataset.apply(
+        tf.data.experimental.filter_for_shard(num_workers(), id_in_cluster()))
+    # tf.compat.v1.logging.info("Setting random seed %d", id_in_cluster())
+    # tf.random.set_random_seed(id_in_cluster())
+  return dataset

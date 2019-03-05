@@ -125,6 +125,8 @@ def run(flags_obj):
     distribution_utils.undo_set_up_synthetic_data()
     input_fn = imagenet_main.input_fn
 
+  strategy_scope = keras_common.get_strategy_scope(strategy)
+
   train_input_dataset = input_fn(
       is_training=True,
       data_dir=flags_obj.data_dir,
@@ -143,8 +145,6 @@ def run(flags_obj):
   strategy = distribution_utils.get_distribution_strategy(
       distribution_strategy=flags_obj.distribution_strategy,
       num_gpus=flags_obj.num_gpus)
-
-  strategy_scope = keras_common.get_strategy_scope(strategy)
 
   with strategy_scope:
     optimizer = keras_common.get_optimizer()
