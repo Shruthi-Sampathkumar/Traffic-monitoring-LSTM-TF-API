@@ -157,7 +157,7 @@ def get_callbacks(learning_rate_schedule_fn, num_images):
   time_callback = TimeHistory(FLAGS.batch_size, FLAGS.log_steps)
 
   tensorboard_callback = tf.keras.callbacks.TensorBoard(
-      log_dir=FLAGS.model_dir)
+      log_dir=FLAGS.model_dir, profile_batch=0)
 
   lr_callback = LearningRateBatchScheduler(
       learning_rate_schedule_fn,
