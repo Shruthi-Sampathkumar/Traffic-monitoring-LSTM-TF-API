@@ -63,7 +63,8 @@ def get_distribution_strategy(distribution_strategy="default",
     return None
 
   if distribution_strategy == "multi_worker_mirrored" or num_workers > 1:
-    return tf.distribute.experimental.MultiWorkerMirroredStrategy()
+    return tf.distribute.experimental.MultiWorkerMirroredStrategy(
+        communication=tf.distribute.experimental.CollectiveCommunication.NCCL)
 
   if (distribution_strategy == "one_device" or
       (distribution_strategy == "default" and num_gpus <= 1)):
