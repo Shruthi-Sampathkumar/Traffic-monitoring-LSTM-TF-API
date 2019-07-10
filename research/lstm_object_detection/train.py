@@ -57,21 +57,21 @@ flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
 flags.DEFINE_integer('task', 0, 'task id')
 flags.DEFINE_integer('num_clones', 1, 'Number of clones to deploy per worker.')
 flags.DEFINE_boolean(
-    'clone_on_cpu', False,
+    'clone_on_cpu', True,
     'Force clones to be deployed on CPU.  Note that even if '
     'set to False (allowing ops to run on gpu), some ops may '
     'still be run on the CPU if they have no GPU kernel.')
-flags.DEFINE_integer('worker_replicas', 1, 'Number of worker+trainer '
+flags.DEFINE_integer('worker_replicas', 0, 'Number of worker+trainer '
                      'replicas.')
 flags.DEFINE_integer(
     'ps_tasks', 0, 'Number of parameter server tasks. If None, does not use '
     'a parameter server.')
 flags.DEFINE_string(
-    'train_dir', '',
+    'train_dir', '/scratch/user/shruthi/amir_research/tf_object_detection_api/research/lstm_object_detection/train_output',
     'Directory to save the checkpoints and training summaries.')
 
 flags.DEFINE_string(
-    'pipeline_config_path', '',
+    'pipeline_config_path', '/scratch/user/shruthi/amir_research/tf_object_detection_api/research/lstm_object_detection/configs/lstm_ssd_mobilenet_v1_imagenet.config',
     'Path to a pipeline_pb2.TrainEvalPipelineConfig config '
     'file. If provided, other configs are ignored')
 
@@ -182,4 +182,7 @@ def main(_):
 
 
 if __name__ == '__main__':
+  #gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8000)
+
+  #sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
   tf.app.run()
