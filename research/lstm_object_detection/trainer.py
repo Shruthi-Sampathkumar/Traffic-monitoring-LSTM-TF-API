@@ -170,8 +170,19 @@ def _create_losses(input_queue, create_model_fn, train_config):
       groundtruth_keypoints_list)
   prediction_dict = detection_model.predict(images, true_image_shapes,
                                             input_queue['batch'])
+  print("---------------------------------")
+  print("TRAINER LINE 173")
+  print("PREDICTION DICT BOX ENCODINGS")
+  print(prediction_dict['box_encodings'].shape)
+  print("PREDICTION DICT KEYS")
+  print(prediction_dict.keys())
+  print("TRUE IMAGE SHAPES")
+  print(true_image_shapes)
 
   losses_dict = detection_model.loss(prediction_dict, true_image_shapes)
+  print("-------------------------------")
+  print("TRAINER LINE 179")
+  print(losses_dict)
   for loss_tensor in losses_dict.values():
     tf.losses.add_loss(loss_tensor)
 
@@ -197,7 +208,7 @@ def get_restore_checkpoint_ops(restore_checkpoints, detection_model,
     available_var_map = (
         variables_helper.get_variables_available_in_checkpoint(
             var_map, restore_checkpoint))
-    for var_name, var in available_var_map.iteritems():
+    for var_name, var in available_var_map.items():
       if var in vars_restored:
         tf.logging.info('Variable %s contained in multiple checkpoints',
                      var.op.name)
@@ -209,7 +220,7 @@ def get_restore_checkpoint_ops(restore_checkpoints, detection_model,
     available_ema_var_map = {}
     ckpt_reader = tf.train.NewCheckpointReader(restore_checkpoint)
     ckpt_vars_to_shape_map = ckpt_reader.get_variable_to_shape_map()
-    for var_name, var in available_var_map.iteritems():
+    for var_name, var in available_var_map.items():
       var_name_ema = var_name + '/ExponentialMovingAverage'
       if var_name_ema in ckpt_vars_to_shape_map:
         available_ema_var_map[var_name_ema] = var
@@ -361,6 +372,12 @@ def train(create_tensor_dict_fn,
       update_op = tf.group(*update_ops, name='update_barrier')
       with tf.control_dependencies([update_op]):
         train_tensor = tf.identity(total_loss, name='train_op')
+    print("---------------------------------")
+    print("TRAINER LINE 370")    
+    print("TOTAL LOSS TENSOR")
+    print(total_loss)
+    print(train_tensor)
+
 
     if graph_hook_fn:
       with tf.device(deploy_config.variables_device()):
@@ -391,7 +408,7 @@ def train(create_tensor_dict_fn,
     # Save checkpoints regularly.
     keep_checkpoint_every_n_hours = train_config.keep_checkpoint_every_n_hours
     saver = tf.train.Saver(
-        keep_checkpoint_every_n_hours=keep_checkpoint_every_n_hours)
+        keep_checkpoint_every_n_hours=keep_checkpoint_every_n_hours, max_to_keep=10000)
 
     slim.learning.train(
         train_tensor,
